@@ -1,5 +1,9 @@
 ﻿using Microsoft.Extensions.Configuration;
+using rpi_ws281x;
 using System;
+using System.Drawing;
+using System.Threading;
+using System.Timers;
 using TeamsBusyLED.Authentication;
 using TeamsBusyLED.Graph;
 
@@ -7,9 +11,14 @@ namespace TeamsBusyLED
 {
     class Program
     {
+
+        private static System.Timers.Timer aTimer;
+
         static void Main(string[] args)
         {
-            Console.WriteLine("Teams LED\n");
+            Console.WriteLine("Busy Indicator v0.01\n");
+
+            InitLED();
 
             var appConfig = LoadAppSettings();
 
@@ -36,51 +45,51 @@ namespace TeamsBusyLED
             var user = GraphHelper.GetMeAsync().Result;
             Console.WriteLine($"Welcome {user.DisplayName}!\n");
 
-            int choice = -1;
+            SetTimer();
+            Console.WriteLine("\nPress the Enter key to exit the application...\n");
+            Console.ReadLine();
+            aTimer.Stop();
+            aTimer.Dispose();
+        }
 
-            while (choice != 0)
+        private static void OnTimedEvent(Object source, ElapsedEventArgs e)
+        {
+            var Presence = GraphHelper.GetMePresenceAsync().Result;
+            Console.SetCursorPosition(0, Console.CursorTop);
+            Console.WriteLine("\rThe Elapsed event was raised at {0:HH:mm:ss.fff}", e.SignalTime);
+            Console.WriteLine($"\rPresence : {Presence.Availability}");
+        }
+
+        private static void InitLED()
+        {
+            //The default settings uses a frequency of 800000 Hz and the DMA channel 10.
+            var settings = Settings.CreateDefaultSettings();
+
+            //Use 16 LEDs and GPIO Pin 18.
+            //Set brightness to maximum (255)
+            //Use Unknown as strip type. Then the type will be set in the native assembly.
+            var controller = settings.AddController(16, Pin.Gpio18, StripType.WS2812_STRIP, ControllerType.PWM0, 255, false);
+
+            using (var rpi = new WS281x(settings))
             {
-                Console.WriteLine("Please choose one of the following options:");
-                Console.WriteLine("0. Exit");
-                Console.WriteLine("1. Display access token");
-                Console.WriteLine("2. List calendar events");
-                Console.WriteLine("3. Show users presence");
-
-                try
-                {
-                    choice = int.Parse(Console.ReadLine());
-                }
-                catch (System.FormatException)
-                {
-                    // Set to invalid value
-                    choice = -1;
-                }
-
-                switch (choice)
-                {
-                    case 0:
-                        // Exit the program
-                        Console.WriteLine("Goodbye...");
-                        break;
-                    case 1:
-                        // Display access token
-                        Console.WriteLine($"Access token: {accessToken}\n");
-                        break;
-                    case 2:
-                        // List the calendar
-                        ListCalendarEvents();
-                        break;
-                    case 3:
-                        var Presence = GraphHelper.GetMePresenceAsync().Result;
-                        Console.WriteLine($"Presence : {Presence.Availability}");
-                        break;
-                    default:
-                        Console.WriteLine("Invalid choice! Please try again.");
-                        break;
-                }
+                //Set the color of the first LED of controller 0 to blue
+                controller.SetLED(0, Color.Blue);
+                //Set the color of the second LED of controller 0 to red
+                controller.SetLED(1, Color.Red);
+                rpi.Render();
             }
         }
-  
+
+        private static void SetTimer()
+        {
+            // Create a timer with a two second interval.
+            aTimer = new System.Timers.Timer(2000);
+            // Hook up the Elapsed event for the timer. 
+            aTimer.Elapsed += OnTimedEvent;
+            aTimer.AutoReset = true;
+            aTimer.Enabled = true;
+        }
+
 
         static IConfigurationRoot LoadAppSettings()
         {
