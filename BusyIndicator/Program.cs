@@ -70,7 +70,7 @@ namespace TeamsBusyLED
             //Use 16 LEDs and GPIO Pin 18.
             //Set brightness to maximum (255)
             //Use Unknown as strip type. Then the type will be set in the native assembly.
-            var controller = settings.AddController(16, Pin.Gpio18, StripType.WS2812_STRIP, ControllerType.PWM0, 255, false);
+            var controller = settings.AddController(32, Pin.Gpio18, StripType.WS2811_STRIP_RGB, ControllerType.PWM0, 255, false);
 
             using (var rpi = new WS281x(settings))
             {
