@@ -62,6 +62,8 @@ namespace TeamsBusyLED
 
         private static void InitLED()
         {
+
+            Console.WriteLine("Init LED");
             //The default settings uses a frequency of 800000 Hz and the DMA channel 10.
             var settings = Settings.CreateDefaultSettings();
 
