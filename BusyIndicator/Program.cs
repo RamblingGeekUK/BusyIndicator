@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Configuration;
-using rpi_ws281x;
 using System;
 using System.Drawing;
 using System.Threading;
@@ -18,7 +17,7 @@ namespace TeamsBusyLED
         {
             Console.WriteLine("Busy Indicator v0.01\n");
 
-            InitLED();
+            InitLED2();
 
             var appConfig = LoadAppSettings();
 
@@ -60,27 +59,52 @@ namespace TeamsBusyLED
             Console.WriteLine($"\rPresence : {Presence.Availability}");
         }
 
-        private static void InitLED()
+        // private static void InitLED()
+        // {
+
+        //     Console.WriteLine("Init LED");
+        //     //The default settings uses a frequency of 800000 Hz and the DMA channel 10.
+        //     var settings = Settings.CreateDefaultSettings();
+
+        //     //Use 16 LEDs and GPIO Pin 18.
+        //     //Set brightness to maximum (255)
+        //     //Use Unknown as strip type. Then the type will be set in the native assembly.
+        //     var controller = settings.AddController(32, Pin.Gpio18, StripType.WS2811_STRIP_RBG, ControllerType.PWM0, 255, false);
+
+        //     using (var rpi = new WS281x(settings))
+        //     {
+        //         //Set the color of the first LED of controller 0 to blue
+        //         controller.SetLED(0, Color.Blue);
+        //         //Set the color of the second LED of controller 0 to red
+        //         controller.SetLED(1, Color.Red);
+        //         rpi.Render();
+        //     }
+        // }
+
+        private static void InitLED2()
         {
+            // Initialize a new instance of the wrapper
+            var neopixel = new ws281x.Net.Neopixel(ledCount: 32, pin: 18);
 
-            Console.WriteLine("Init LED");
-            //The default settings uses a frequency of 800000 Hz and the DMA channel 10.
-            var settings = Settings.CreateDefaultSettings();
+            // You can also choose a custom color order
+            neopixel = new ws281x.Net.Neopixel(ledCount: 32, pin: 18, stripType: rpi_ws281x.WS2811_STRIP_RBG);
 
-            //Use 16 LEDs and GPIO Pin 18.
-            //Set brightness to maximum (255)
-            //Use Unknown as strip type. Then the type will be set in the native assembly.
-            var controller = settings.AddController(32, Pin.Gpio18, StripType.WS2811_STRIP_RGB, ControllerType.PWM0, 255, false);
+            // Always initialize the wrapper first
+            neopixel.Begin();
 
-            using (var rpi = new WS281x(settings))
+            // Set color of all LEDs to red
+            for (var i = 0; i < neopixel.GetNumberOfPixels(); i++)
             {
-                //Set the color of the first LED of controller 0 to blue
-                controller.SetLED(0, Color.Blue);
-                //Set the color of the second LED of controller 0 to red
-                controller.SetLED(1, Color.Red);
-                rpi.Render();
+                neopixel.SetPixelColor(i, System.Drawing.Color.Red);
             }
+
+            // Apply changes to the led
+            neopixel.Show();
+
+            // Dispose after use
+            neopixel.Dispose();
         }
+
 
         private static void SetTimer()
         {
